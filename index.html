@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Schedule Pro</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+  
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --high: #f87171;
+    --med: #fbbf24;
+    --low: #4ade80;
+    --done: #22c55e;
+  }
+  [data-theme="light"] {
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --accent: #0284c7;
+  }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: radial-gradient(1200px 800px at 80% -10%, rgba(56,189,248,0.15), transparent),
+                radial-gradient(800px 600px at -10% 110%, rgba(167,139,250,0.12), transparent),
+                var(--bg);
+    color: var(--text);
+    transition: 0.4s ease;
+    padding: 20px;
+    min-height: 100vh;
+  }
+
+.container { max-width: 1300px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--accent), #a78bfa, #f472b6);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 3s linear infinite;
+  }
+  @keyframes shine {
+    to { background-position: 200% center; }
+  }
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+  }
+.stat-card {
+    background: var(--card);
+    padding: 15px;
+    border-radius: 14px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+.stat-card h4 { color: var(--muted); font-size: 0.9rem; }
+.stat-card p { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+
+.add-task {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 18px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    backdrop-filter: blur(10px);
+  }
+
+.add-task input,.add-task select,.add-task button {
+    padding: 12px;
+    border: 1px solid var(--muted);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 1rem;
+  }
+
+.add-task button {
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+  }
+.add-task button:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 6px 20px rgba(56,189,248,0.4); }
+
+.week {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+.day {
+    background: var(--card);
+    padding: 18px;
+    border-radius: 18px;
+    min-height: 220px;
+    transition: 0.3s;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+.day.drag-over {
+    outline: 2px dashed var(--accent);
+    transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(56,189,248,0.3);
+  }
+
+.day h3 {
+    margin-bottom: 12px;
+    color: var(--accent);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+.progress-bar {
+    height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--done), var(--accent));
+    width: 0%;
+    transition: width 0.5s ease;
+  }
+
+.task {
+    background: var(--bg);
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: grab;
+    border-left: 4px solid var(--low);
+    animation: slideIn 0.4s ease;
+    transition: 0.3s;
+  }
+.task.done {
+    opacity: 0.6;
+    text-decoration: line-through;
+    border-left-color: var(--done);
+  }
+.task.high { border-left-color: var(--high); }
+.task.med { border-left-color: var(--med); }
+.task.low { border-left-color: var(--low); }
+
+.task:hover { transform: translateX(8px); }
+
+.task-actions button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    margin-left: 8px;
+    transition: 0.2s;
+  }
+.task-actions button:hover { transform: scale(1.3); }
+
+.empty { color: var(--muted); font-style: italic; text-align: center; margin-top: 20px; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-15px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+ .confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    background: var(--accent);
+    position: absolute;
+    animation: confetti-fall 2s ease-out forwards;
+  }
+  @keyframes confetti-fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  @media (max-width: 600px) {
+  .add-task div { flex-direction: column; }
+  }
+</style>
+</head>
+<body data-theme="dark">
+<div class="container">
+  <header>
+    <h1>⚡ Task Schedule Pro</h1>
+    <button class="theme-toggle" onclick="toggleTheme()" style="padding:10px 20px; border-radius:50px; border:1px solid var(--muted); background:var(--card); color:var(--text); cursor:pointer;">🌙/☀️</button>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="add-task">
+    <h3 style="margin-bottom:10px;">Create Task</h3>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <input type="text" id="taskInput" placeholder="What needs doing?">
+      <select id="daySelect"></select>
+      <select id="prioritySelect">
+        <option value="low">🟢 Low</option>
+        <option value="med">🟡 Medium</option>
+        <option value="high">🔴 High</option>
+      </select>
+      <input type="time" id="timeInput">
+      <button onclick="addTask()">+ Add Task</button>
+    </div>
+  </div>
+
+  <div class="week" id="weekSchedule"></div>
+</div>
+  
+
+<script>
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  let schedule = JSON.parse(localStorage.getItem("taskSchedule")) || {};
+  let draggedTask = null;
+  let audioContext = null;
+
+  days.forEach(day => {
+    if (!schedule[day]) schedule[day] = [];
+  });
+
+  document.getElementById("daySelect").innerHTML = days.map(d => `<option>${d}</option>`).join("");
+
+  function initAudio() {
+    if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  function playSound(type) {
+    initAudio();
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+
+    if (type === 'add') {
+      osc.frequency.setValueAtTime(800, audioContext.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
+    } else if (type === 'done') {
+      osc.frequency.setValueAtTime(600, audioContext.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.2);
+    }
+
+    gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+    osc.start();
+    osc.stop(audioContext.currentTime + 0.2);
+  }
+
+  function confettiBurst(x, y) {
+    for (let i = 0; i < 30; i++) {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.style.left = x + 'px';
+      confetti.style.top = y + 'px';
+      confetti.style.background = ['#38bdf8', '#a78bfa', '#f472b6', '#4ade80', '#fbbf24'][Math.floor(Math.random()*5)];
+      confetti.style.transform = `rotate(${Math.random()*360}deg)`;
+      document.body.appendChild(confetti);
+      setTimeout(() => confetti.remove(), 2000);
+    }
+  }
+
+  function updateStats() {
+    const total = days.reduce((sum, d) => sum + schedule[d].length, 0);
+    const done = days.reduce((sum, d) => sum + schedule[d].filter(t => t.done).length, 0);
+    const high = days.reduce((sum, d) => sum + schedule[d].filter(t => t.priority === 'high' &&!t.done).length, 0);
+
+    document.getElementById('stats').innerHTML = `
+      <div class="stat-card"><h4>Total Tasks</h4><p>${total}</p></div>
+      <div class="stat-card"><h4>Completed</h4><p>${done}</p></div>
+      <div class="stat-card"><h4>High Priority</h4><p>${high}</p></div>
+      <div class="stat-card"><h4>Progress</h4><p>${total? Math.round(done/total*100) : 0}%</p></div>
+    `;
+  }
+
+  function renderSchedule() {
+    const weekDiv = document.getElementById("weekSchedule");
+    weekDiv.innerHTML = "";
+
+    days.forEach(day => {
+      const doneCount = schedule[day].filter(t => t.done).length;
+      const progress = schedule[day].length? (doneCount/schedule[day].length)*100 : 0;
+
+      let tasksHtml = schedule[day].map((task, index) =>
+        `<div class="task ${task.priority} ${task.done? 'done' : ''}" draggable="true"
+              ondragstart="dragStart('${day}', ${index})">
+          <div style="flex:1;">
+            <span ${task.done? '' : `onclick="editTask('${day}', ${index})"`} style="cursor:${task.done? 'default' : 'pointer'}">
+              ${task.text} ${task.time? `<small style="color:var(--muted)">• ${task.time}</small>` : ''}
+            </span>
+          </div>
+          <div class="task-actions">
+            <button onclick="toggleDone('${day}', ${index})" title="Mark done">${task.done? '↩️' : '✓'}</button>
+            <button onclick="deleteTask('${day}', ${index})">×</button>
+          </div>
+        </div>`
+      ).join("");
+
+      weekDiv.innerHTML += `
+        <div class="day" ondragover="dragOver(event)"
+             ondrop="dropTask('${day}')" ondragleave="dragLeave(event)">
+          <h3>${day} <span style="font-size:0.8rem; color:var(--muted)">${doneCount}/${schedule[day].length}</span></h3>
+          <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+          ${tasksHtml || '<div class="empty">No tasks</div>'}
+        </div>
+      `;
+    });
+    updateStats();
+  }
+
+  function addTask() {
+    const text = document.getElementById("taskInput").value.trim();
+    if (!text) { alert("Add a task first!"); return; }
+
+    const day = document.getElementById("daySelect").value;
+    const priority = document.getElementById("prioritySelect").value;
+    const time = document.getElementById("timeInput").value;
+
+    schedule[day].push({ text, priority, time, done: false, id: Date.now() });
+    localStorage.setItem("taskSchedule", JSON.stringify(schedule));
+
+    playSound('add');
+    document.getElementById("taskInput").value = "";
+    document.getElementById("timeInput").value = "";
+    renderSchedule();
+  }
+
+  function toggleDone(day, index) {
+    const task = schedule[day][index];
+    task.done =!task.done;
+
+    if (task.done) {
+      playSound('done');
+      const rect = event.target.getBoundingClientRect();
+      confettiBurst(rect.left + rect.width/2, rect.top);
+    }
+
+    localStorage.setItem("taskSchedule", JSON.stringify(schedule));
+    renderSchedule();
+  }
+
+  function editTask(day, index) {
+    const newText = prompt("Edit task:", schedule[day][index].text);
+    if (newText!== null && newText.trim()) {
+      schedule[day][index].text = newText.trim();
+      localStorage.setItem("taskSchedule", JSON.stringify(schedule));
+      renderSchedule();
+    }
+  }
+
+  function deleteTask(day, index) {
+    if (confirm("Delete this task?")) {
+      schedule[day].splice(index, 1);
+      localStorage.setItem("taskSchedule", JSON.stringify(schedule));
+      renderSchedule();
+    }
+  }
+
+  function dragStart(day, index) { draggedTask = { day, index, task: schedule[day][index] }; }
+  function dragOver(e) { e.preventDefault(); e.target.closest('.day').classList.add('drag-over'); }
+  function dragLeave(e) { e.target.closest('.day').classList.remove('drag-over'); }
+
+  function dropTask(targetDay) {
+    if (!draggedTask) return;
+    document.querySelectorAll('.day').forEach(d => d.classList.remove('drag-over'));
+    if (draggedTask.day!== targetDay) {
+      schedule[draggedTask.day].splice(draggedTask.index, 1);
+      schedule[targetDay].push(draggedTask.task);
+      localStorage.setItem("taskSchedule", JSON.stringify(schedule));
+      renderSchedule();
+    }
+    draggedTask = null;
+  }
+
+  function toggleTheme() {
+    const current = document.body.getAttribute('data-theme');
+    document.body.setAttribute('data-theme', current === 'dark'? 'light' : 'dark');
+  }
+
+  document.getElementById("taskInput").addEventListener('keypress', e => {
+    if (e.key === 'Enter') addTask();
+  });
+
+  renderSchedule();
+</script>
+<a style="color: #f1f5f9; text-decoration: none" href="profile.html">Developer Profile</a>
+</body>
+</html>
